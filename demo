@@ -1,0 +1,61 @@
+#!/bin/bash
+
+set -eu pipefail
+
+echo_title() {
+    echo -e "\e[1m\e[93m$1\e[0m"
+}
+
+echo_title "Geting access token automatically."
+echo 
+echo "If this does not work, then try this"
+echo "1. Goto: https://developer.spotify.com/console/post-playlists/"
+echo "2. Click: GET TOKEN"
+echo "3. Tick both scopes at the top (playlist-modify-public, playlist-modify-private)"
+echo "4. Click 'Request Token', and copy the OAuth Token and run the command"
+echo "   export access_token=\"{ACCESS_TOKEN}\""
+echo
+
+read -p "Press ENTER to try generate token automatically"
+
+# Get access token
+# ----------------
+# This opens the browser and asks you to give access to your spotify account
+# when prompted (in your browser), return to terminal.
+echo_title "Opening webpage, come back to this terminal to continue"
+export access_token=$(./spotify-buddy token --quiet)
+
+# Download your library to use as a seed to recommend new song
+# saves as spo_library.tsv (by default)
+echo
+echo_title "Downloading your library to use as a seed to recommend new song"
+./spotify-buddy library
+
+# Download all other playlists (so we know what to exclude from the recommendations)
+# ----------------
+# saved as spo_all_playlists.tsv
+echo
+echo_title "Downloading all other playlists (so we know what to exclude from the recommendations)"
+echo "(This may take a while)"
+echo "..."
+./spotify-buddy list-playlists | awk '{print $1}' | xargs -I{} ./spotify-buddy get-playlist --id={} > spo_all_playlists.tsv
+
+
+# Generate recommendations
+# ----------------
+# reads from spo_library.tsv (by default, param: --input)
+# saved as spo_recs_all.tsv (by default, param: --output)
+echo
+echo_title "Generating recommendations based on your liked songs that you've never heard before"
+./spotify-buddy recommend --exclude=spo_all_playlists.tsv
+
+# Create playlist with the recommendations
+# ----------------
+# reads from spo_recs_all.tsv (by default, param: --input)
+echo 
+echo "Done, now the final part..."
+echo_title "Creating a new playlist in your Spotify library and uploading the recommendataions..."
+./spotify-buddy create-playlist --name="My new favorites"
+
+echo 
+echo_title "All Done, check your spotify library for a new playlist and enjoy."

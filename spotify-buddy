@@ -60,6 +60,14 @@ def spotify_api_call(path, params=None):
         eprint(
             f"Invalid status code from spotify [{path}]: {rsp.status_code}\n{rsp.text}"
         )
+
+        if rsp.status_code == 403:
+            print("Try this to get access token")
+            print("1. Goto: https://developer.spotify.com/console/post-playlists/")
+            print("2. Click: GET TOKEN")
+            print("3. Tick both scopes at the top (playlist-modify-public, playlist-modify-private)")
+            print("4. Click 'Request Token', and copy the OAuth Token and run the command")
+            print("   export access_token=\"{ACCESS_TOKEN}\"")
         return None, None
 
     return (json.loads(rsp.text), rsp.text)
@@ -185,6 +193,7 @@ def handle_load_library(ofile):
     # header
     library_file.write("# id\ttitle\tartist_name\talbum_name\n")
     offset = 0
+    print("Downloading library...")
 
     while True:
         print(f"Downloading library (offset: {offset})")
