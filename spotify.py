@@ -149,7 +149,7 @@ def handle_load_recommendataion(infile, outfile, exclude=None):
             artist_name = item["artists"][0]["name"]
             popularity = item["popularity"]
 
-            if exclude_tracks_hm.__contains__(id) == False:
+            if exclude_tracks_hm.__contains__(id) == False and exclude_tracks_hm.__contains__(title) == False:
                 num_added += 1
                 rec_file.write(
                     f"{id}\t{title}\t{artist_name}\t{album_name}\t{popularity}\n"
