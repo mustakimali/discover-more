@@ -4,7 +4,13 @@ Find and recommend unique songs you've never listened before based on your favor
 
 ## Demo
 ```bash
-# export the access token (get it from spotify dev portal with scopes: user-read-private, user-library-read, playlist-modify-public, playlist-modify-private)
+# Get access token
+# 1. Goto: https://developer.spotify.com/console/post-playlists/
+# 2. Click: GET TOKEN
+# 3. Tick both scopes at the top (playlist-modify-public, playlist-modify-private)
+# 4. Requst Token, and copy the access token
+
+# Export the access token
 $ export access_token="...."
 
 # Download you library to use as a seed to recommend new song
