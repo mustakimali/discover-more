@@ -11,12 +11,10 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import re
 
-# Scopes: user-read-private, user-library-read, playlist-modify-public, playlist-modify-private
-#
 # https://developer.spotify.com/documentation/web-api/reference/#/operations/get-recommendations
 # https://developer.spotify.com/console/library/
 
-# ------------------------------------------------------------
+
 def delete_file(fpath):
     if os.path.exists(fpath):
         os.remove(fpath)
@@ -333,7 +331,7 @@ def handle_token():
     port = 5050
     client_id = "a7b3642e5c144974a9092e957b788768"
     redirect_uri = f"http://{host_name}:{port}/"
-    scopes = "user-read-private,user-library-read,playlist-modify-public,playlist-modify-private,playlist-read-private"
+    scopes = "user-read-private,user-library-read,playlist-modify-private,playlist-read-private"
 
     url = f"https://accounts.spotify.com/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope={scopes}&response_type=token"
     print("Authorize the request and come back when you are asked.")
