@@ -5,10 +5,12 @@ Find and recommend unique songs you've never listened before based on your favor
 ## Demo
 ```bash
 # Get access token
-# 1. Goto: https://developer.spotify.com/console/post-playlists/
-# 2. Click: GET TOKEN
-# 3. Tick both scopes at the top (playlist-modify-public, playlist-modify-private)
-# 4. Requst Token, and copy the access token
+$ ./spotify.py token
+
+# this opens the browser and asks you to give access to your spotify account
+# when prompted (in your browser), return to terminal and run the command
+# displayed that looks like this. (It's also copied into your clipboard)
+# export access_token="{token_from_spotify}"
 
 # Export the access token
 $ export access_token="...."

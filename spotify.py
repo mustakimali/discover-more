@@ -336,7 +336,7 @@ def handle_token():
     scopes = "user-read-private,user-library-read,playlist-modify-public,playlist-modify-private,playlist-read-private"
 
     url = f"https://accounts.spotify.com/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope={scopes}&response_type=token"
-    print("Authorize the request and copy paste the url that starts")
+    print("Authorize the request and come back when you are asked.")
     webbrowser.open(url)
 
     class CallbackServer(BaseHTTPRequestHandler):
@@ -349,8 +349,13 @@ def handle_token():
                 self.wfile.write(
                     bytes("<html><head><title>Spotify Buddy</title></head>", "utf-8")
                 )
-                self.wfile.write(bytes("<body>", "utf-8"))
-                self.wfile.write(bytes("<h1>Go back to your terminal</h1>", "utf-8"))
+                self.wfile.write(bytes('<body style="background-color:#000">', "utf-8"))
+                self.wfile.write(
+                    bytes(
+                        '<h1 style="font-family: sans serif;padding: 20px 20px;color: aqua;">Go back to your terminal</h1>',
+                        "utf-8",
+                    )
+                )
                 self.wfile.write(
                     bytes(
                         "<script>setTimeout(function(){window.close()}, 2000);</script>",
@@ -380,10 +385,10 @@ def handle_token():
             self.wfile.write(
                 bytes("<html><head><title>Callback</title></head>", "utf-8")
             )
-            self.wfile.write(bytes("<body>", "utf-8"))
+            self.wfile.write(bytes('<body style="background-color:#000">', "utf-8"))
             self.wfile.write(
                 bytes(
-                    "<script>location.href = `/?${location.hash.substr(1)}`</script>",
+                    "<script>location.href = `/?${location.hash.substr(1)}`;</script>",
                     "utf-8",
                 )
             )
