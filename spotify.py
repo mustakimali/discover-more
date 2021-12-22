@@ -326,15 +326,16 @@ def handle_get_playlist(playlist_id):
         offset += 50
 
 
-def handle_token():
+def handle_token(quiet=False):
     host_name = "localhost"
     port = 5050
     client_id = "a7b3642e5c144974a9092e957b788768"
     redirect_uri = f"http://{host_name}:{port}/"
-    scopes = "user-read-private,user-library-read,playlist-modify-private,playlist-read-private"
+    scopes = "user-library-read,playlist-modify-private,playlist-read-private"
 
     url = f"https://accounts.spotify.com/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope={scopes}&response_type=token"
-    print("Authorize the request and come back when you are asked.")
+    if quiet == False:
+        print("Authorize the request and come back when you are asked.")
     webbrowser.open(url)
 
     class CallbackServer(BaseHTTPRequestHandler):
@@ -366,14 +367,17 @@ def handle_token():
                 match = re.finditer(regex, self.path, re.MULTILINE).__next__()
                 token = match.group(1)
                 cmd = f'export access_token="{token}"'
-                print(
-                    "Success! run the following command to save the access token (it's also copied into the clipboard)"
-                )
-                print("------------------------------------------------------")
-                print(cmd)
-                print("------------------------------------------------------")
+                if quiet == False:
+                    print(
+                        "Success! run the following command to save the access token (it's also copied into the clipboard)"
+                    )
+                    print("------------------------------------------------------")
+                    print(cmd)
+                    print("------------------------------------------------------")
 
-                os.system(f"echo '{cmd}' | xclip -selection clipboard")
+                    os.system(f"echo '{cmd}' | xclip -selection clipboard")
+                else:
+                    print(token)
                 exit(0)
 
             # step 1: send a js code to redirect with the code
@@ -391,6 +395,9 @@ def handle_token():
                 )
             )
             self.wfile.write(bytes("</body></html>", "utf-8"))
+
+        def log_message(self, format, *args):
+            return
 
     webServer = HTTPServer((host_name, port), CallbackServer)
     try:
@@ -411,6 +418,9 @@ def main():
 
     # get access token
     token = cmd.add_parser("token", help="Generate access token")
+    token.add_argument(
+        "--quiet", help="Quiet mode (outputs the access_token)", action="store_true"
+    )
 
     # download playlist/library
     library = cmd.add_parser("library", help="load library")
@@ -469,7 +479,7 @@ def main():
         exit(3)
 
     if args.command == "token":
-        handle_token()
+        handle_token(args.quiet)
 
     _ = get_access_token()  # validate access token
 
