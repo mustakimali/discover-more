@@ -7,6 +7,9 @@ import json
 import argparse
 from datetime import datetime
 import sys
+import webbrowser
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import re
 
 # Scopes: user-read-private, user-library-read, playlist-modify-public, playlist-modify-private
 #
@@ -149,7 +152,10 @@ def handle_load_recommendataion(infile, outfile, exclude=None):
             artist_name = item["artists"][0]["name"]
             popularity = item["popularity"]
 
-            if exclude_tracks_hm.__contains__(id) == False and exclude_tracks_hm.__contains__(title) == False:
+            if (
+                exclude_tracks_hm.__contains__(id) == False
+                and exclude_tracks_hm.__contains__(title) == False
+            ):
                 num_added += 1
                 rec_file.write(
                     f"{id}\t{title}\t{artist_name}\t{album_name}\t{popularity}\n"
@@ -322,12 +328,86 @@ def handle_get_playlist(playlist_id):
         offset += 50
 
 
+def handle_token():
+    host_name = "localhost"
+    port = 5050
+    client_id = "a7b3642e5c144974a9092e957b788768"
+    redirect_uri = f"http://{host_name}:{port}/"
+    scopes = "user-read-private,user-library-read,playlist-modify-public,playlist-modify-private,playlist-read-private"
+
+    url = f"https://accounts.spotify.com/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope={scopes}&response_type=token"
+    print("Authorize the request and copy paste the url that starts")
+    webbrowser.open(url)
+
+    class CallbackServer(BaseHTTPRequestHandler):
+        def do_GET(self):
+            # step 2: get access token from query string
+            if self.path.__contains__("?access_token="):
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.end_headers()
+                self.wfile.write(
+                    bytes("<html><head><title>Spotify Buddy</title></head>", "utf-8")
+                )
+                self.wfile.write(bytes("<body>", "utf-8"))
+                self.wfile.write(bytes("<h1>Go back to your terminal</h1>", "utf-8"))
+                self.wfile.write(
+                    bytes(
+                        "<script>setTimeout(function(){window.close()}, 2000);</script>",
+                        "utf-8",
+                    )
+                )
+                self.wfile.write(bytes("</body></html>", "utf-8"))
+
+                regex = r"access_token=([^&]*)"
+                match = re.finditer(regex, self.path, re.MULTILINE).__next__()
+                token = match.group(1)
+                cmd = f'export access_token="{token}"'
+                print(
+                    "Success! run the following command to save the access token (it's also copied into the clipboard)"
+                )
+                print("------------------------------------------------------")
+                print(cmd)
+                print("------------------------------------------------------")
+
+                os.system(f"echo '{cmd}' | xclip -selection clipboard")
+                exit(0)
+
+            # step 1: send a js code to redirect with the code
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(
+                bytes("<html><head><title>Callback</title></head>", "utf-8")
+            )
+            self.wfile.write(bytes("<body>", "utf-8"))
+            self.wfile.write(
+                bytes(
+                    "<script>location.href = `/?${location.hash.substr(1)}`</script>",
+                    "utf-8",
+                )
+            )
+            self.wfile.write(bytes("</body></html>", "utf-8"))
+
+    webServer = HTTPServer((host_name, port), CallbackServer)
+    try:
+        webServer.serve_forever()
+    except KeyboardInterrupt:
+        pass
+
+    webServer.server_close()
+    print("Server stopped.")
+
+
 def main():
     FILE_NAME_LIBRARY = "spo_library.tsv"
     FILE_NAME_RECOMMENDATAION = "spo_recs_all.tsv"
 
     parser = argparse.ArgumentParser(description="Recommend new songs")
     cmd = parser.add_subparsers(dest="command")
+
+    # get access token
+    token = cmd.add_parser("token", help="Generate access token")
 
     # download playlist/library
     library = cmd.add_parser("library", help="load library")
@@ -384,6 +464,9 @@ def main():
     if args.command == None:
         parser.print_help()
         exit(3)
+
+    if args.command == "token":
+        handle_token()
 
     _ = get_access_token()  # validate access token
 
