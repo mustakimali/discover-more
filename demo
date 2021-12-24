@@ -29,7 +29,7 @@ export access_token=$(./spotify-buddy token --quiet)
 # saves as spo_library.tsv (by default)
 echo
 echo_title "Downloading your library to understand your taste"
-./spotify-buddy library
+./spotify-buddy get-library
 
 # Download all other playlists (so we know what to exclude from the recommendations)
 # ----------------

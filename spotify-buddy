@@ -1,4 +1,23 @@
 #!/usr/bin/env /usr/bin/python3
+#
+# Find and recommend unique songs you've never listened before based on your favorite songs in Spotify library.
+#
+# positional arguments:
+#   {token,get-library,recommend,create-playlist,list-playlists,get-playlist}
+#     token               Interactively generate Spotify access token to be able use with all other commands (Set this as
+#                         env variable: access_token) Alternatively use --quiet flag: '$ export access_token=$(./spotify-
+#                         buddy token --quiet)'
+#     get-library         Download all liked songs
+#     recommend           Generate recommendations based on given songs (--input=<file> / or stdin) by excluding the given
+#                         songs (--exclude=<file>). Saves recommendations to to --out=<file>
+#     create-playlist     Create a new playlist with the name (--name=<name>) and uplod all songs from the given file
+#                         (--input=<file> / or stdin).
+#     list-playlists      List all playlists
+#     get-playlist        Download a playlist by ID
+#
+# optional arguments:
+#   -h, --help            show this help message and exit
+#
 
 import os
 import sys
@@ -12,8 +31,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import re
 import tempfile
 
-# https://developer.spotify.com/documentation/web-api/reference/#/operations/get-recommendations
-# https://developer.spotify.com/console/library/
+ARG_PARAM_TOKEN = "token"
+ARG_PARAM_GET_LIBRARY = "get-library"
+ARG_PARAM_GET_RECOMMENDATIONS = "recommend"
+ARG_PARAM_GET_PLAYLIST = "get-playlist"
+ARG_PARAM_LIST_PLAYLIST = "list-playlists"
+ARG_PARAM_CREATE_PLAYLIST = "create-playlist"
 
 
 def delete_file(fpath):
@@ -99,19 +122,26 @@ def spotify_api_call(path, params=None):
 
 def init_args():
     FILE_NAME_LIBRARY = "spo_library.tsv"
-    FILE_NAME_RECOMMENDATAION = "spo_recs_all.tsv"
+    FILE_NAME_RECOMMENDATAION = "spo_recommendations.tsv"
 
-    parser = argparse.ArgumentParser(description="Recommend new songs")
+    parser = argparse.ArgumentParser(
+        description="Find and recommend unique songs you've never listened before based on your favorite songs in Spotify library."
+    )
     cmd = parser.add_subparsers(dest="command")
 
     # get access token
-    token = cmd.add_parser("token", help="Generate access token")
+    token = cmd.add_parser(
+        ARG_PARAM_TOKEN,
+        help="Interactively generate Spotify access token to be able use with all other commands (Set this as env variable: access_token)\nAlternatively use --quiet flag: '$ export access_token=$(./spotify-buddy token --quiet)'",
+    )
     token.add_argument(
-        "--quiet", help="Quiet mode (outputs the access_token)", action="store_true"
+        "--quiet",
+        help="Quiet mode (outputs the access_token to stdio)",
+        action="store_true",
     )
 
     # download playlist/library
-    library = cmd.add_parser("library", help="load library")
+    library = cmd.add_parser(ARG_PARAM_GET_LIBRARY, help="Download all liked songs")
     library.add_argument(
         "--out",
         help=f"Outfile file path [optional, default {FILE_NAME_LIBRARY}]",
@@ -119,7 +149,10 @@ def init_args():
     )
 
     # recommend songs based on seed (--input, a tsv file)
-    recommend = cmd.add_parser("recommend", help="generate recommendations")
+    recommend = cmd.add_parser(
+        ARG_PARAM_GET_RECOMMENDATIONS,
+        help="Generate recommendations based on given songs (--input=<file> / or stdin) by excluding the given songs (--exclude=<file>). Saves recommendations to to --out=<file>",
+    )
     recommend.add_argument(
         "--input",
         help=f"Generate recommendations based on tracks in file path [optional, default {FILE_NAME_LIBRARY}]",
@@ -137,8 +170,8 @@ def init_args():
 
     # create playlist from recommendations (--input, a tsv file, --name, name)
     cplaylist = cmd.add_parser(
-        "create-playlist",
-        help="create playlist from a generated recommendations file (*.tsv)",
+        ARG_PARAM_CREATE_PLAYLIST,
+        help="Create a new playlist with the name (--name=<name>) and uplod all songs from the given file (--input=<file> / or stdin).",
     )
     cplaylist.add_argument(
         "--input",
@@ -149,9 +182,11 @@ def init_args():
 
     # basic command to talk to spotify
     # list playlists in stdout
-    getallplaylists = cmd.add_parser("list-playlists", help="List all user playlists")
+    getallplaylists = cmd.add_parser(ARG_PARAM_LIST_PLAYLIST, help="List all playlists")
     # download playlists
-    downloadplaylist = cmd.add_parser("get-playlist", help="Get a playlist")
+    downloadplaylist = cmd.add_parser(
+        ARG_PARAM_GET_PLAYLIST, help="Download a playlist by ID"
+    )
     downloadplaylist.add_argument(
         "--id", help=f"id of the playlist to dowload", required=True
     )
@@ -331,7 +366,7 @@ def handle_create_playlist(infpath, playlistname):
     if confirm != "y":
         print(f'You pressed "{confirm}", Aborting')
         exit(1)
-        
+
     # get user id
     (resp, raw) = spotify_api_call("v1/me")
     if resp == None:
@@ -518,26 +553,26 @@ def main():
         parser.print_help()
         exit(3)
 
-    if args.command == "token":
+    if args.command == ARG_PARAM_TOKEN:
         handle_token(args.quiet)
 
     _ = get_access_token()  # validate access token
 
-    if args.command == "library":
+    if args.command == ARG_PARAM_GET_LIBRARY:
         handle_load_library(args.out)
-    elif args.command == "recommend":
+    elif args.command == ARG_PARAM_GET_RECOMMENDATIONS:
         # prefer piped input over passed file
         args.input = from_stdio_if_no_atty(args.input)
         handle_load_recommendataion(args.input, args.out, args.exclude)
         delete_if_no_atty(args.input)
-    elif args.command == "create-playlist":
+    elif args.command == ARG_PARAM_CREATE_PLAYLIST:
         # prefer piped input over passed file
         args.input = from_stdio_if_no_atty(args.input)
         handle_create_playlist(args.input, args.name)
         delete_if_no_atty(args.input)
-    elif args.command == "list-playlists":
+    elif args.command == ARG_PARAM_LIST_PLAYLIST:
         handle_list_playlist()
-    elif args.command == "get-playlist":
+    elif args.command == ARG_PARAM_GET_PLAYLIST:
         handle_get_playlist(args.id)
     else:
         parser.print_help()
