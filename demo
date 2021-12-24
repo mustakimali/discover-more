@@ -38,7 +38,8 @@ echo
 echo_title "Downloading all other playlists (so we know what to exclude from the recommendations)"
 echo "(This may take a while)"
 echo "..."
-./spotify-buddy list-playlists | awk '{print $1}' | xargs -I{} ./spotify-buddy get-playlist --id={} > spo_all_playlists.tsv
+rm spo_all_playlists.tsv || true
+./spotify-buddy list-playlists | awk '{print $1}' | xargs -I{} ./spotify-buddy get-playlist --id={} >> spo_all_playlists.tsv
 
 
 # Generate recommendations

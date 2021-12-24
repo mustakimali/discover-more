@@ -10,6 +10,7 @@ import sys
 import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import re
+import tempfile
 
 # https://developer.spotify.com/documentation/web-api/reference/#/operations/get-recommendations
 # https://developer.spotify.com/console/library/
@@ -36,6 +37,25 @@ def get_access_token():
         eprint("Must set access_token env variable")
         exit(1)
     return token
+
+
+def from_stdio_if_no_atty(file):
+    if sys.stdin.isatty():
+        return file
+
+    temp = tempfile.NamedTemporaryFile(delete=False)
+    for line in sys.stdin.readlines():
+        temp.write(str.encode(line))
+
+    print(
+        f"WARNING: Reading from stdin (using temp file {temp.name}) instead of {file}"
+    )
+    return temp.name
+
+
+def delete_if_no_atty(file):
+    if not sys.stdin.isatty():
+        delete_file(file)
 
 
 def spotify_api_call(path, params=None):
@@ -65,12 +85,82 @@ def spotify_api_call(path, params=None):
             print("Try this to get access token")
             print("1. Goto: https://developer.spotify.com/console/post-playlists/")
             print("2. Click: GET TOKEN")
-            print("3. Tick both scopes at the top (playlist-modify-public, playlist-modify-private)")
-            print("4. Click 'Request Token', and copy the OAuth Token and run the command")
-            print("   export access_token=\"{ACCESS_TOKEN}\"")
+            print(
+                "3. Tick both scopes at the top (playlist-modify-public, playlist-modify-private)"
+            )
+            print(
+                "4. Click 'Request Token', and copy the OAuth Token and run the command"
+            )
+            print('   export access_token="{ACCESS_TOKEN}"')
         return None, None
 
     return (json.loads(rsp.text), rsp.text)
+
+
+def init_args():
+    FILE_NAME_LIBRARY = "spo_library.tsv"
+    FILE_NAME_RECOMMENDATAION = "spo_recs_all.tsv"
+
+    parser = argparse.ArgumentParser(description="Recommend new songs")
+    cmd = parser.add_subparsers(dest="command")
+
+    # get access token
+    token = cmd.add_parser("token", help="Generate access token")
+    token.add_argument(
+        "--quiet", help="Quiet mode (outputs the access_token)", action="store_true"
+    )
+
+    # download playlist/library
+    library = cmd.add_parser("library", help="load library")
+    library.add_argument(
+        "--out",
+        help=f"Outfile file path [optional, default {FILE_NAME_LIBRARY}]",
+        default=FILE_NAME_LIBRARY,
+    )
+
+    # recommend songs based on seed (--input, a tsv file)
+    recommend = cmd.add_parser("recommend", help="generate recommendations")
+    recommend.add_argument(
+        "--input",
+        help=f"Generate recommendations based on tracks in file path [optional, default {FILE_NAME_LIBRARY}]",
+        default=FILE_NAME_LIBRARY,
+    )
+    recommend.add_argument(
+        "--out",
+        help=f"Outfile file path [optional, default {FILE_NAME_RECOMMENDATAION}]",
+        default=FILE_NAME_RECOMMENDATAION,
+    )
+    recommend.add_argument(
+        "--exclude",
+        help=f"Comma separated files with tracks to exclude in this mix [optional]",
+    )
+
+    # create playlist from recommendations (--input, a tsv file, --name, name)
+    cplaylist = cmd.add_parser(
+        "create-playlist",
+        help="create playlist from a generated recommendations file (*.tsv)",
+    )
+    cplaylist.add_argument(
+        "--input",
+        help=f"The file containing all songs details (default: {FILE_NAME_RECOMMENDATAION})",
+        default=FILE_NAME_RECOMMENDATAION,
+    )
+    cplaylist.add_argument("--name", help=f"Name of the playlist", required=True)
+
+    # basic command to talk to spotify
+    # list playlists in stdout
+    getallplaylists = cmd.add_parser("list-playlists", help="List all user playlists")
+    # download playlists
+    downloadplaylist = cmd.add_parser("get-playlist", help="Get a playlist")
+    downloadplaylist.add_argument(
+        "--id", help=f"id of the playlist to dowload", required=True
+    )
+    downloadplaylist.add_argument(
+        "--out",
+        help=f"Output file to write (use stdout if not specified)",
+    )
+
+    return parser
 
 
 # ------------------------------------------------------------
@@ -419,67 +509,7 @@ def handle_token(quiet=False):
 
 
 def main():
-    FILE_NAME_LIBRARY = "spo_library.tsv"
-    FILE_NAME_RECOMMENDATAION = "spo_recs_all.tsv"
-
-    parser = argparse.ArgumentParser(description="Recommend new songs")
-    cmd = parser.add_subparsers(dest="command")
-
-    # get access token
-    token = cmd.add_parser("token", help="Generate access token")
-    token.add_argument(
-        "--quiet", help="Quiet mode (outputs the access_token)", action="store_true"
-    )
-
-    # download playlist/library
-    library = cmd.add_parser("library", help="load library")
-    library.add_argument(
-        "--out",
-        help=f"Outfile file path [optional, default {FILE_NAME_LIBRARY}]",
-        default=FILE_NAME_LIBRARY,
-    )
-
-    # recommend songs based on seed (--input, a tsv file)
-    recommend = cmd.add_parser("recommend", help="generate recommendations")
-    recommend.add_argument(
-        "--input",
-        help=f"Generate recommendations based on tracks in file path [optional, default {FILE_NAME_LIBRARY}]",
-        default=FILE_NAME_LIBRARY,
-    )
-    recommend.add_argument(
-        "--out",
-        help=f"Outfile file path [optional, default {FILE_NAME_RECOMMENDATAION}]",
-        default=FILE_NAME_RECOMMENDATAION,
-    )
-    recommend.add_argument(
-        "--exclude",
-        help=f"Comma separated files with tracks to exclude in this mix [optional]",
-    )
-
-    # create playlist from recommendations (--input, a tsv file, --name, name)
-    cplaylist = cmd.add_parser(
-        "create-playlist",
-        help="create playlist from a generated recommendations file (*.tsv)",
-    )
-    cplaylist.add_argument(
-        "--input",
-        help=f"The file containing all songs details (default: {FILE_NAME_RECOMMENDATAION})",
-        default=FILE_NAME_RECOMMENDATAION,
-    )
-    cplaylist.add_argument("--name", help=f"Name of the playlist", required=True)
-
-    # basic command to talk to spotify
-    # list playlists in stdout
-    getallplaylists = cmd.add_parser("list-playlists", help="List all user playlists")
-    # download playlists
-    downloadplaylist = cmd.add_parser("get-playlist", help="Get a playlist")
-    downloadplaylist.add_argument(
-        "--id", help=f"id of the playlist to dowload", required=True
-    )
-    downloadplaylist.add_argument(
-        "--out",
-        help=f"Output file to write (use stdout if not specified)",
-    )
+    parser = init_args()
 
     args = parser.parse_args()
 
@@ -495,9 +525,15 @@ def main():
     if args.command == "library":
         handle_load_library(args.out)
     elif args.command == "recommend":
+        # prefer piped input over passed file
+        args.input = from_stdio_if_no_atty(args.input)
         handle_load_recommendataion(args.input, args.out, args.exclude)
+        delete_if_no_atty(args.input)
     elif args.command == "create-playlist":
+        # prefer piped input over passed file
+        args.input = from_stdio_if_no_atty(args.input)
         handle_create_playlist(args.input, args.name)
+        delete_if_no_atty(args.input)
     elif args.command == "list-playlists":
         handle_list_playlist()
     elif args.command == "get-playlist":
