@@ -330,7 +330,8 @@ def handle_create_playlist(infpath, playlistname):
 
     if confirm != "y":
         print(f'You pressed "{confirm}", Aborting')
-        return
+        exit(1)
+        
     # get user id
     (resp, raw) = spotify_api_call("v1/me")
     if resp == None:

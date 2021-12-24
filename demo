@@ -25,10 +25,10 @@ read -p "Press ENTER to try generate token automatically"
 echo_title "Opening webpage, come back to this terminal to continue"
 export access_token=$(./spotify-buddy token --quiet)
 
-# Download your library to use as a seed to recommend new song
+# Download your library to use as a seed to generate recommendations
 # saves as spo_library.tsv (by default)
 echo
-echo_title "Downloading your library to use as a seed to recommend new song"
+echo_title "Downloading your library to understand your taste"
 ./spotify-buddy library
 
 # Download all other playlists (so we know what to exclude from the recommendations)
