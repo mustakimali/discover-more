@@ -241,7 +241,8 @@ def handle_load_recommendataion(infile, outfile, exclude=None):
         {}
     )  # hashmap for quick lookup if a track is already loaded, library is already included
     seed_ids = []  # the ids used as seed for recommendataion
-
+    counts = {}  # id, count
+    all_tracks = {}  # id, data
     # load seeds
     load_file(infile, exclude_tracks_hm, seed_ids)
     exclude_ids = seed_ids
@@ -283,6 +284,9 @@ def handle_load_recommendataion(infile, outfile, exclude=None):
             artist_name = item["artists"][0]["name"]
             popularity = item["popularity"]
 
+            counts[id] = counts.get(id, 0) + 1
+            all_tracks[id] = (title, album_name, artist_name, popularity)
+
             if (
                 exclude_tracks_hm.__contains__(id) == False
                 and exclude_tracks_hm.__contains__(title) == False
@@ -307,7 +311,25 @@ def handle_load_recommendataion(infile, outfile, exclude=None):
     )
     os.system(f"mv {outfile}_sorted.tsv {outfile}")
 
-    print("Done")
+    print(f"{outfile}: Recommendations ordered by spotify popularity.")
+
+    # save most recommended tracks to a separate file
+    sorted_counts = sorted(counts.items(), key=lambda x: x[1], reverse=True)
+
+    outfile = outfile[:-4] + "_top.tsv"
+    delete_file(outfile)
+    rec_file = open(outfile, "a")
+    # header
+    rec_file.write("# id\ttitle\tartist_name\talbum_name\tpopularity\n")
+
+    for item in sorted_counts:
+        id = item[0]
+        item = all_tracks[id]
+        (title, album_name, artist_name, popularity) = item
+        rec_file.write(f"{id}\t{title}\t{artist_name}\t{album_name}\t{popularity}\n")
+    rec_file.close()
+
+    print(f"{outfile}: Recommendations ordered by your unique taste.")
 
 
 def handle_load_library(ofile):
