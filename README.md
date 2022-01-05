@@ -1,4 +1,4 @@
-# Spotfy Buddy
+# Discover More
 
 Find and recommend unique songs you've never listened before based on your favorite songs in Spotify library.
 

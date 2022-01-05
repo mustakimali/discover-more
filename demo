@@ -23,13 +23,15 @@ read -p "Press ENTER to try generate token automatically"
 # This opens the browser and asks you to give access to your spotify account
 # when prompted (in your browser), return to terminal.
 echo_title "Opening webpage, come back to this terminal to continue"
-export access_token=$(./spotify-buddy token --quiet)
+export access_token=$(./discover-more token --quiet)
 
 # Download your library to use as a seed to generate recommendations
 # saves as spo_library.tsv (by default)
 echo
 echo_title "Downloading your library to understand your taste"
-./spotify-buddy get-library
+./discover-more get-library
+
+rm spo_all_playlists.tsv || true
 
 # Download all other playlists (so we know what to exclude from the recommendations)
 # ----------------
@@ -38,8 +40,7 @@ echo
 echo_title "Downloading all other playlists (so we know what to exclude from the recommendations)"
 echo "(This may take a while)"
 echo "..."
-rm spo_all_playlists.tsv || true
-./spotify-buddy list-playlists | awk '{print $1}' | xargs -I{} ./spotify-buddy get-playlist --id={} >> spo_all_playlists.tsv
+./discover-more list-playlists | awk '{print $1}' | xargs -I{} ./discover-more get-playlist --id={} >> spo_all_playlists.tsv
 
 
 # Generate recommendations
@@ -48,7 +49,7 @@ rm spo_all_playlists.tsv || true
 # saved as spo_recs_all.tsv (by default, param: --output)
 echo
 echo_title "Generating recommendations based on your liked songs that you've never heard before"
-./spotify-buddy recommend --exclude=spo_all_playlists.tsv
+./discover-more recommend --exclude=spo_all_playlists.tsv
 
 # Create playlist with the recommendations
 # ----------------
@@ -56,7 +57,7 @@ echo_title "Generating recommendations based on your liked songs that you've nev
 echo 
 echo "Done, now the final part..."
 echo_title "Creating a new playlist in your Spotify library and uploading the recommendataions..."
-./spotify-buddy create-playlist --name="My new favorites"
+./discover-more create-playlist --name="My new favorites"
 
 echo 
 echo_title "All Done, check your spotify library for a new playlist and enjoy."

@@ -5,8 +5,7 @@
 # positional arguments:
 #   {token,get-library,recommend,create-playlist,list-playlists,get-playlist}
 #     token               Interactively generate Spotify access token to be able use with all other commands (Set this as
-#                         env variable: access_token) Alternatively use --quiet flag: '$ export access_token=$(./spotify-
-#                         buddy token --quiet)'
+#                         env variable: access_token) Alternatively use --quiet flag: '$ export access_token=$(./discover-more token --quiet)'
 #     get-library         Download all liked songs
 #     recommend           Generate recommendations based on given songs (--input=<file> / or stdin) by excluding the given
 #                         songs (--exclude=<file>). Saves recommendations to to --out=<file>
@@ -132,7 +131,7 @@ def init_args():
     # get access token
     token = cmd.add_parser(
         ARG_PARAM_TOKEN,
-        help="Interactively generate Spotify access token to be able use with all other commands (Set this as env variable: access_token)\nAlternatively use --quiet flag: '$ export access_token=$(./spotify-buddy token --quiet)'",
+        help="Interactively generate Spotify access token to be able use with all other commands (Set this as env variable: access_token)\nAlternatively use --quiet flag: '$ export access_token=$(./discover-more token --quiet)'",
     )
     token.add_argument(
         "--quiet",
@@ -398,14 +397,14 @@ def handle_create_playlist(infpath, playlistname):
     # create playlist
     dt_string = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     dt_string_short = datetime.now().strftime("%y%m%d%H%M")
-    playlistname = f"{playlistname} by spotify-buddy @ {dt_string_short}"
+    playlistname = f"{playlistname} by discover-more @ {dt_string_short}"
     print(f"Creating playlist {playlistname}")
     (resp, raw) = spotify_api_call(
         f"v1/users/{user_id}/playlists",
         {
             "name": playlistname,
             "public": False,
-            "description": f"Created by spotify-buddy on {dt_string}",
+            "description": f"Created by discover-more on {dt_string}",
         },
     )
     if resp == None:
@@ -486,7 +485,7 @@ def handle_get_playlist(playlist_id):
 def handle_token(quiet=False):
     host_name = "localhost"
     port = 5050
-    client_id = "a7b3642e5c144974a9092e957b788768"
+    client_id = "eb8d4dea271742018bc3ef2ee8290968"
     redirect_uri = f"http://{host_name}:{port}/"
     scopes = "user-library-read,playlist-modify-private,playlist-read-private"
 
@@ -503,7 +502,7 @@ def handle_token(quiet=False):
                 self.send_header("Content-type", "text/html")
                 self.end_headers()
                 self.wfile.write(
-                    bytes("<html><head><title>Spotify Buddy</title></head>", "utf-8")
+                    bytes("<html><head><title>Discover More</title></head>", "utf-8")
                 )
                 self.wfile.write(bytes('<body style="background-color:#000">', "utf-8"))
                 self.wfile.write(
