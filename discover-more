@@ -404,7 +404,7 @@ def handle_create_playlist(infpath, playlistname):
         {
             "name": playlistname,
             "public": False,
-            "description": f"Created by discover-more on {dt_string}",
+            "description": f"Created by discover-more on {dt_string} (https://github.com/mustakimali/discover-more)",
         },
     )
     if resp == None:
