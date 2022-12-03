@@ -46,7 +46,9 @@ echo "..."
 # Generate recommendations
 # ----------------
 # reads from spo_library.tsv (by default, param: --input)
-# saved as spo_recs_all.tsv (by default, param: --output)
+# save two recommendation files (by default, param: --output)
+# spo_recommendations_top.tsv: Sorted by your taste
+# spo_recommendations.tsv: Sorted by Spotify popularity
 echo
 echo_title "Generating recommendations based on your liked songs that you've never heard before"
 ./discover-more recommend --exclude=spo_all_playlists.tsv
@@ -56,8 +58,8 @@ echo_title "Generating recommendations based on your liked songs that you've nev
 # reads from spo_recs_all.tsv (by default, param: --input)
 echo 
 echo "Done, now the final part..."
-echo_title "Creating a new playlist in your Spotify library and uploading the recommendataions..."
-./discover-more create-playlist --name="My new favorites"
+echo_title "Creating a new playlist in your Spotify library and uploading the recommendations..."
+./discover-more create-playlist  --input spo_recommendations_top.tsv --name="My new favorites"
 
 echo 
 echo_title "All Done, check your spotify library for a new playlist and enjoy."
